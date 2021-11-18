@@ -17,6 +17,10 @@ ol, ul {
   display: table;
 }
 
+.player {
+  font-size: 30px;
+}
+
 .status {
   margin-bottom: 10px;
   font-size: 30px;
@@ -52,4 +56,13 @@ ol, ul {
 
 .game-info {
   margin-left: 20px;
+}
+
+.restartButton {
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 13px;
+  margin-bottom: 15px;
 }

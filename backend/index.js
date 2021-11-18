@@ -1,6 +1,11 @@
 const express = require('express')
+var bodyParser = require('body-parser')
+const cors = require('cors');
 const app = express()
 const port = 8000
+app.use(cors());
+app.options('*', cors());
+app.use(bodyParser.json())
 
 let board_state = Array(9).fill(null);
 let winner = "";
@@ -82,6 +87,7 @@ app.post('/play_move', function(req, res) {
   res.json({
     success: valid_move,
     state: board_state,
+    winner: winner,
     turn: turn
   })
 });
@@ -91,10 +97,12 @@ app.post('/restart', function(req, res) {
   winner = "";
   turn = "X";
   res.json({
-    success: true
+    success: true,
+    state: board_state,
+    winner: winner,
+    turn: turn
   })
 });
-
 
 app.listen(port, () => {
   console.log(`Backend listening at http://localhost:${port}`)

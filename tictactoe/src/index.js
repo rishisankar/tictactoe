@@ -16,18 +16,64 @@ class Board extends React.Component {
     this.state = {
       squares: Array(9).fill(null),
       xIsNext: true,
+      winner: "",
     };
   }
 
-  handleClick(i) {
-    const squares = this.state.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
+  async updateBoardState() {
+    const response = await fetch("http://localhost:8000/get_board_state", {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': 'application/json'
+      }
+    });
+    const responseJSON = await response.json();
     this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext,
+      squares: responseJSON.state,
+      xIsNext: responseJSON.turn === "X",
+      winner: responseJSON.winner
+    });
+  }
+
+  componentDidMount() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    this.setState({
+      player: urlParams.get("p")
+    })
+    this.updateBoardState();
+    const interval = setInterval(() => {
+      this.updateBoardState();
+    }, 500);
+    this.setState({
+      interval: interval
+    })
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.state.interval);
+  }
+
+  async handleClick(i) {
+
+    const response = await fetch("http://localhost:8000/play_move", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        pos: i,
+        player: this.state.player
+      })
+    });
+    const responseJSON = await response.json();
+
+    this.setState({
+      squares: responseJSON.state,
+      xIsNext: responseJSON.turn === "X",
+      winner: responseJSON.winner
     });
   }
 
@@ -40,18 +86,38 @@ class Board extends React.Component {
     );
   }
 
+  async restartGame() {
+    const response = await fetch("http://localhost:8000/restart", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': 'application/json'
+      },
+    });
+    console.log(this.state.player);
+
+    const responseJSON = await response.json();
+
+    this.setState({
+      squares: responseJSON.state,
+      xIsNext: responseJSON.turn === "X",
+      winner: responseJSON.winner
+    });
+  }
+
   render() {
-    const winner = calculateWinner(this.state.squares);
     let status;
-    if (winner) {
-      status = 'Winner: ' + winner;
+    if (this.state.winner) {
+      status = 'Winner: ' + this.state.winner;
     } else {
-      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+      status = 'Turn: ' + (this.state.xIsNext ? 'X' : 'O');
     }
 
     return (
       <div className="main-wrapper">
+        <div className="player">{"Player " + this.state.player}</div>
         <div className="status">{status}</div>
+        <button className="restartButton" onClick={() => this.restartGame()}>Restart Game</button>
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -79,10 +145,6 @@ class Game extends React.Component {
         <div className="game-board">
           <Board />
         </div>
-        <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
-        </div>
       </div>
     );
   }
@@ -94,23 +156,3 @@ ReactDOM.render(
   <Game />,
   document.getElementById('root')
 );
-
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
