@@ -21,19 +21,23 @@ class Board extends React.Component {
   }
 
   async updateBoardState() {
-    const response = await fetch("http://localhost:8000/get_board_state", {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
-      }
-    });
-    const responseJSON = await response.json();
-    this.setState({
-      squares: responseJSON.state,
-      xIsNext: responseJSON.turn === "X",
-      winner: responseJSON.winner
-    });
+    try {
+      const response = await fetch("http://localhost:8000/get_board_state", {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        }
+      });
+      const responseJSON = await response.json();
+      this.setState({
+        squares: responseJSON.state,
+        xIsNext: responseJSON.turn === "X",
+        winner: responseJSON.winner
+      });
+    } catch (e) {
+
+    }
   }
 
   componentDidMount() {
@@ -56,25 +60,28 @@ class Board extends React.Component {
   }
 
   async handleClick(i) {
+    try {
+      const response = await fetch("http://localhost:8000/play_move", {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pos: i,
+          player: this.state.player
+        })
+      });
+      const responseJSON = await response.json();
 
-    const response = await fetch("http://localhost:8000/play_move", {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        pos: i,
-        player: this.state.player
-      })
-    });
-    const responseJSON = await response.json();
+      this.setState({
+        squares: responseJSON.state,
+        xIsNext: responseJSON.turn === "X",
+        winner: responseJSON.winner
+      });
+    } catch (e) {
 
-    this.setState({
-      squares: responseJSON.state,
-      xIsNext: responseJSON.turn === "X",
-      winner: responseJSON.winner
-    });
+    }
   }
 
   renderSquare(i) {
@@ -87,22 +94,46 @@ class Board extends React.Component {
   }
 
   async restartGame() {
-    const response = await fetch("http://localhost:8000/restart", {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
-      },
-    });
-    console.log(this.state.player);
+    try {
+      const response = await fetch("http://localhost:8000/restart", {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        },
+      });
+      console.log(this.state.player);
 
-    const responseJSON = await response.json();
+      const responseJSON = await response.json();
 
+      this.setState({
+        squares: responseJSON.state,
+        xIsNext: responseJSON.turn === "X",
+        winner: responseJSON.winner
+      });
+    } catch (e) {
+
+    }
+  }
+
+  setPlayer(pl) {
     this.setState({
-      squares: responseJSON.state,
-      xIsNext: responseJSON.turn === "X",
-      winner: responseJSON.winner
-    });
+      player: pl
+    })
+  }
+
+  getPlayerDiv() {
+    if (this.state.player === "X" || this.state.player === "O") {
+      return <div className="player">{"Player " + this.state.player}</div>
+    } else {
+      return (
+        <div className="playerSelect">
+          Choose player: 
+          <button className="choosePlayer" onClick={() => this.setPlayer("X")}>X</button>
+          <button className="choosePlayer" onClick={() => this.setPlayer("O")}>O</button>
+        </div>
+      )
+    }
   }
 
   render() {
@@ -115,7 +146,7 @@ class Board extends React.Component {
 
     return (
       <div className="main-wrapper">
-        <div className="player">{"Player " + this.state.player}</div>
+        {this.getPlayerDiv()}
         <div className="status">{status}</div>
         <button className="restartButton" onClick={() => this.restartGame()}>Restart Game</button>
         <div className="board-row">

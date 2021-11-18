@@ -66,3 +66,11 @@ ol, ul {
   font-size: 13px;
   margin-bottom: 15px;
 }
+
+.playerSelect {
+  font-size: 30px;
+}
+.choosePlayer {
+  padding: 5px 10px 5px 10px;
+  margin-left: 5px;
+}
