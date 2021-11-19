@@ -2,7 +2,7 @@
 Initialization of Node.js / Express (you can ignore this)
 */
 const express = require('express')
-var bodyParser = require('body-parser')
+const bodyParser = require('body-parser')
 const cors = require('cors');
 const app = express()
 const port = 8000
@@ -48,18 +48,18 @@ function calculateWinner(squares) {
 
 /*
 
-Endpoint description:
+Endpoint description (using JSON responses)
 
-1. GET get_board_state (no params)
-Returns game state:
+1. GET /get_board_state (no params)
+Responds with game state:
 {
   state: [...],
   winner: "X" / "O" / "",
   turn: "X" / "O" / ""
 }
 
-2. POST play_move (int pos, string piece)
-Returns whether the move was valid + new game state:
+2. POST /play_move (int pos, string player)
+Responds with whether the move was valid + new game state:
 {
   success: true/false,
   state: [...],
@@ -67,8 +67,8 @@ Returns whether the move was valid + new game state:
   turn: "X" / "O" / ""
 }
 
-3. POST restart
-Returns the reset game state:
+3. POST /restart
+Responds with the reset game state:
 {
   state: [...],
   winner: "X" / "O" / "",
@@ -77,46 +77,74 @@ Returns the reset game state:
 
 */
 
+/*
+With Express, this is how to add an endpoint (app.get is a GET endpoint).
+To send a JSON response, use:
+  res.json(
+    {
+      field1: val1,
+      field2: val2,
+      ...
+    }
+  )
+*/
 app.get('/get_board_state', (req, res) => {
-  res.json({
-    state: board_state,
-    winner: winner,
-    turn: turn
-  });
+  res.json(
+    {
+      state: board_state,
+      winner: winner,
+      turn: turn
+    }
+  )
 })
 
+/*
+app.post corresponds to a POST endpoint.
+POST endpoints can come with a request body (used to specify parameters), accessed like:
+  let param1 = req.body.param1;
+For this endpoint, we have two parameters, pos and player.
+
+Things to do:
+1) Extract params from req.body (see above)
+2) If it is the player's turn, nobody has won yet, and the specified pos is 
+   empty / in array bounds, make the move (use if statements)
+3) To make the move, update board_state, recalculate the winner, update whose turn it is
+4) Send a JSON response with new game state. The success field should be true if the move was made.
+   (use res.json as in the previous endpoint)
+*/
 app.post('/play_move', function(req, res) {
-  const pos = req.body.pos;
-  const player = req.body.player
-  let valid_move = false;
-  if (player == "X" || player == "O") {
-    if (turn == player && winner == "") {
-      if (pos >= 0 && pos < 9) {
-        if (board_state[pos] == null) {
-          valid_move = true;
-          board_state[pos] = player;
-          winner = calculateWinner(board_state);
-          if (turn == "X") {
-            turn = "O";
-          } else {
-            turn = "X";
-          }
-        }
-      }
+  let pos = req.body.pos;
+  let player = req.body.player;
+  let success = false;
+  if (player == turn && winner == "" && pos >= 0 && pos < 9 && board_state[pos] == "") {
+    success = true;
+    board_state[pos] = player;
+    winner = calculateWinner(board_state);
+    if (turn == "X") {
+      turn = "O";
+    } else {
+      turn = "X";
     }
   }
   res.json({
-    success: valid_move,
+    success: success,
     state: board_state,
     winner: winner,
     turn: turn
   })
 });
 
+/*
+The final endpoint should reset the game state to restart the game.
+
+Things to do:
+1) Reset board_state, winner, turn to initial values
+2) Send a JSON response with the resetted game state
+*/
 app.post('/restart', function(req, res) {
-  board_state = Array(9).fill(null);
+  board_state = Array(9).fill("");
   winner = "";
-  turn = "X";
+  turn = "X"
   res.json({
     state: board_state,
     winner: winner,
@@ -124,7 +152,7 @@ app.post('/restart', function(req, res) {
   })
 });
 
-// After all the endpoints, start the backend server!
+// After all the endpoints, start up the backend server! (can ignore this)
 app.listen(port, () => {
   console.log(`Backend listening at http://localhost:${port}`)
 })

@@ -58,7 +58,7 @@ Responds with game state:
   turn: "X" / "O" / ""
 }
 
-2. POST /play_move (int pos, string piece)
+2. POST /play_move (int pos, string player)
 Responds with whether the move was valid + new game state:
 {
   success: true/false,
